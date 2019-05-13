@@ -23,6 +23,7 @@ class Simulation:
 		self.create_env = create_env
 		self.agent = agent
 		self.mapping = mapping
+		self.debug_data = []
 
 	def train(self, max_steps=100_000, instances=1, visualize=False, plot=None, max_subprocesses=0):
 		"""Trains the agent on the specified number of environment instances."""
@@ -52,7 +53,9 @@ class Simulation:
 				if visualize: envs[i].render()
 				action = self.agent.act(states[i], i)
 				next_state, reward, done, _ = envs[i].step(action)
-				self.agent.push(Transition(states[i], action, reward, None if done else next_state), i)
+				tr = Transition(states[i], action, reward, None if done else next_state)
+				self.agent.push(tr, i)
+				self.debug_data.append(tr)
 				episode_rewards[i] += reward
 				if done:
 					episode_reward_sequences[i].append(episode_rewards[i])
