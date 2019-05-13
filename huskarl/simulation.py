@@ -25,19 +25,19 @@ class Simulation:
 		self.mapping = mapping
 		self.debug_data = []
 
-	def train(self, max_steps=100_000, instances=1, visualize=False, plot=None, max_subprocesses=0):
+	def train(self, max_steps=100_000, instances=1, visualize=False, plot=None, max_subprocesses=0, reward_transform=lambda x: x):
 		"""Trains the agent on the specified number of environment instances."""
 		self.agent.training = True
 		if max_subprocesses == 0:
 			# Use single process implementation
-			self._sp_train(max_steps, instances, visualize, plot)
+			self._sp_train(max_steps, instances, visualize, plot, reward_transform)
 		elif max_subprocesses is None or max_subprocesses > 0:
 			# Use multiprocess implementation
 			self._mp_train(max_steps, instances, visualize, plot, max_subprocesses)
 		else:
 			raise HkException(f"Invalid max_subprocesses setting: {max_subprocesses}")
 
-	def _sp_train(self, max_steps, instances, visualize, plot):
+	def _sp_train(self, max_steps, instances, visualize, plot, reward_transform):
 		"""Trains using a single process."""
 		# Keep track of rewards per episode per instance
 		episode_reward_sequences = [[] for i in range(instances)]
@@ -53,6 +53,7 @@ class Simulation:
 				if visualize: envs[i].render()
 				action = self.agent.act(states[i], i)
 				next_state, reward, done, _ = envs[i].step(action)
+				reward = reward_transform(reward)
 				tr = Transition(states[i], action, reward, None if done else next_state)
 				self.agent.push(tr, i)
 				self.debug_data.append(tr)
